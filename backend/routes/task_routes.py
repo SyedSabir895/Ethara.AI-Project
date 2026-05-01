@@ -62,6 +62,7 @@ def create_task():
     
     assigned_to_id = data.get('assignedTo')
     task_name = data.get('taskName')
+    project_name = data.get('projectName', 'General')
     priority = data.get('priority')
     days_to_complete = data.get('daysToComplete')
     remarks = data.get('remarks')
@@ -73,6 +74,7 @@ def create_task():
     due_date = datetime.utcnow() + timedelta(days=days_to_complete)
     
     new_task = {
+        "projectName": project_name,
         "taskName": task_name,
         "priority": priority,
         "assignedTo": ObjectId(assigned_to_id),

@@ -12,7 +12,7 @@ app = Flask(__name__)
 app.config.from_object(Config)
 
 # Initialize Extensions
-CORS(app)
+CORS(app, resources={r"/api/*": {"origins": "*"}})
 jwt = JWTManager(app)
 mail = Mail(app)
 

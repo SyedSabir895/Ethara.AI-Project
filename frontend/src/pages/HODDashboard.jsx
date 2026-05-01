@@ -33,9 +33,11 @@ const HODDashboard = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterPriority, setFilterPriority] = useState('All');
   const [filterStatus, setFilterStatus] = useState('All');
+  const [filterProject, setFilterProject] = useState('All');
 
   // Form State
   const [formData, setFormData] = useState({
+    projectName: '',
     taskName: '',
     priority: 'Low',
     assignedTo: '',
@@ -85,7 +87,7 @@ const HODDashboard = () => {
     try {
       await api.post('/tasks', formData);
       setShowModal(false);
-      setFormData({ taskName: '', priority: 'Low', assignedTo: '', daysToComplete: 1, remarks: '' });
+      setFormData({ projectName: '', taskName: '', priority: 'Low', assignedTo: '', daysToComplete: 1, remarks: '' });
       fetchData();
     } catch (err) {
       alert('Error creating task: ' + (err.response?.data?.message || err.message));
@@ -117,6 +119,7 @@ const HODDashboard = () => {
 
   const exportToExcel = () => {
     const exportData = tasks.map(t => ({
+      'Project': t.projectName || 'General',
       'Task Name': t.taskName,
       'Priority': t.priority,
       'Assigned Teacher': t.assignedTo?.name,
@@ -136,11 +139,15 @@ const HODDashboard = () => {
 
   const filteredTasks = tasks.filter(task => {
     const matchesSearch = task.taskName.toLowerCase().includes(searchTerm.toLowerCase()) || 
-                          task.assignedTo?.name.toLowerCase().includes(searchTerm.toLowerCase());
+                          task.assignedTo?.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                          (task.projectName && task.projectName.toLowerCase().includes(searchTerm.toLowerCase()));
     const matchesPriority = filterPriority === 'All' || task.priority === filterPriority;
     const matchesStatus = filterStatus === 'All' || task.status === filterStatus;
-    return matchesSearch && matchesPriority && matchesStatus;
+    const matchesProject = filterProject === 'All' || task.projectName === filterProject;
+    return matchesSearch && matchesPriority && matchesStatus && matchesProject;
   });
+
+  const uniqueProjects = ['All', ...new Set(tasks.map(t => t.projectName).filter(p => p))];
 
   const PRIORITY_COLORS = {
     'Immediate': '#dc2626',
@@ -249,6 +256,26 @@ const HODDashboard = () => {
                 <option value="Low">Low</option>
               </select>
 
+              <select 
+                className="px-4 py-2 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none bg-white"
+                value={filterProject}
+                onChange={(e) => setFilterProject(e.target.value)}
+              >
+                {uniqueProjects.map(p => (
+                  <option key={p} value={p}>{p === 'All' ? 'All Projects' : p}</option>
+                ))}
+              </select>
+
+              <select 
+                className="px-4 py-2 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none bg-white"
+                value={filterStatus}
+                onChange={(e) => setFilterStatus(e.target.value)}
+              >
+                <option value="All">All Status</option>
+                <option value="Pending">Pending</option>
+                <option value="Done">Done</option>
+              </select>
+
               <button 
                 onClick={exportToExcel}
                 className="flex items-center px-4 py-2 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-xl text-sm font-bold hover:bg-emerald-100 transition-colors"
@@ -298,6 +325,7 @@ const HODDashboard = () => {
                     <tr key={task._id} className="hover:bg-slate-50/50 transition-colors">
                       <td className={`excel-td font-medium priority-${task.priority.toLowerCase()}`}>
                         <div className="flex flex-col">
+                          <span className="text-[10px] font-bold text-indigo-600 uppercase mb-1">{task.projectName || 'General'}</span>
                           <span className="text-slate-800">{task.taskName}</span>
                           <span className="text-[10px] text-slate-400 mt-1 uppercase tracking-tight">ID: {task._id.slice(-6)}</span>
                         </div>
@@ -381,6 +409,18 @@ const HODDashboard = () => {
               </div>
               
               <form onSubmit={handleCreateTask} className="p-6 space-y-5">
+                <div>
+                  <label className="block text-sm font-semibold text-slate-700 mb-1">Project Name</label>
+                  <input 
+                    type="text" 
+                    required
+                    className="w-full px-4 py-2.5 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:outline-none text-sm shadow-sm"
+                    placeholder="e.g., Exam Management"
+                    value={formData.projectName}
+                    onChange={(e) => setFormData({...formData, projectName: e.target.value})}
+                  />
+                </div>
+
                 <div>
                   <label className="block text-sm font-semibold text-slate-700 mb-1">Task Name</label>
                   <input 

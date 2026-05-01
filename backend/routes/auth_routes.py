@@ -9,6 +9,45 @@ from config import Config
 
 auth_bp = Blueprint('auth', __name__)
 bcrypt = Bcrypt()
+ 
+@auth_bp.route('/register', methods=['POST'])
+def register():
+    try:
+        print("DEBUG: Received register request")
+        data = request.get_json()
+        name = data.get('name')
+        email = data.get('email')
+        password = data.get('password')
+        role = data.get('role', 'Teacher')
+
+        if not name or not email or not password:
+            return jsonify({"message": "All fields are required"}), 400
+
+        print(f"DEBUG: Checking if user exists: {email}")
+        if User.find_by_email(email):
+            return jsonify({"message": "User with this email already exists"}), 409
+
+        print("DEBUG: Hashing password")
+        hashed_password = bcrypt.generate_password_hash(password).decode('utf-8')
+        
+        new_user = {
+            "name": name,
+            "email": email,
+            "password": hashed_password,
+            "role": role,
+            "createdAt": datetime.utcnow()
+        }
+        
+        print("DEBUG: Inserting into DB")
+        db.users.insert_one(new_user)
+        print("DEBUG: Registration successful")
+        return jsonify({"message": "User registered successfully"}), 201
+    except Exception as e:
+        print(f"ERROR in /register: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({"message": "Internal Server Error", "error": str(e)}), 500
+
 
 @auth_bp.route('/login', methods=['POST'])
 def login():

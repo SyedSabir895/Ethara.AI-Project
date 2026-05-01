@@ -1,6 +1,12 @@
 import axios from 'axios';
 
-const apiBaseUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+let apiBaseUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+
+// Safety check: If the URL doesn't start with http, it's treated as relative by the browser.
+// We force it to be absolute if it looks like a domain.
+if (apiBaseUrl && !apiBaseUrl.startsWith('http') && apiBaseUrl.includes('.')) {
+  apiBaseUrl = `https://${apiBaseUrl}`;
+}
 
 const api = axios.create({
   baseURL: apiBaseUrl.endsWith('/api') ? apiBaseUrl : `${apiBaseUrl}/api`,

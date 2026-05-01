@@ -7,3 +7,4 @@ python-dotenv
 flask-bcrypt
 dnspython
 apscheduler
+gunicorn

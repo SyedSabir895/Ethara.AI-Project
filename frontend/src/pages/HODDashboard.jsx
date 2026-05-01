@@ -40,7 +40,7 @@ const HODDashboard = () => {
     projectName: '',
     taskName: '',
     priority: 'Low',
-    assignedTo: '',
+    assignedTo: [],
     daysToComplete: 1,
     remarks: ''
   });
@@ -87,7 +87,7 @@ const HODDashboard = () => {
     try {
       await api.post('/tasks', formData);
       setShowModal(false);
-      setFormData({ projectName: '', taskName: '', priority: 'Low', assignedTo: '', daysToComplete: 1, remarks: '' });
+      setFormData({ projectName: '', taskName: '', priority: 'Low', assignedTo: [], daysToComplete: 1, remarks: '' });
       fetchData();
     } catch (err) {
       alert('Error creating task: ' + (err.response?.data?.message || err.message));
@@ -122,8 +122,8 @@ const HODDashboard = () => {
       'Project': t.projectName || 'General',
       'Task Name': t.taskName,
       'Priority': t.priority,
-      'Assigned Teacher': t.assignedTo?.name,
-      'Email': t.assignedTo?.email,
+      'Assigned Teachers': t.assignedTo?.map(a => a.name).join(', '),
+      'Emails': t.assignedTo?.map(a => a.email).join(', '),
       'Assigned Date': format(new Date(t.assignedDate), 'yyyy-MM-dd'),
       'Due Date': format(new Date(t.dueDate), 'yyyy-MM-dd'),
       'Status': t.status,
@@ -139,7 +139,7 @@ const HODDashboard = () => {
 
   const filteredTasks = tasks.filter(task => {
     const matchesSearch = task.taskName.toLowerCase().includes(searchTerm.toLowerCase()) || 
-                          task.assignedTo?.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                          task.assignedTo?.some(t => t.name.toLowerCase().includes(searchTerm.toLowerCase())) ||
                           (task.projectName && task.projectName.toLowerCase().includes(searchTerm.toLowerCase()));
     const matchesPriority = filterPriority === 'All' || task.priority === filterPriority;
     const matchesStatus = filterStatus === 'All' || task.status === filterStatus;
@@ -163,7 +163,7 @@ const HODDashboard = () => {
 
   return (
     <div className="min-h-screen bg-slate-50">
-      <Navbar title="HOD Dashboard" />
+      <Navbar title="Admin Dashboard" />
       
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         
@@ -337,11 +337,16 @@ const HODDashboard = () => {
                         </span>
                       </td>
                       <td className="excel-td">
-                        <div className="flex items-center">
-                          <div className="w-7 h-7 rounded-full bg-slate-100 flex items-center justify-center text-[10px] font-bold text-slate-600 mr-2 border border-slate-200">
-                            {task.assignedTo?.name?.charAt(0).toUpperCase()}
-                          </div>
-                          <span className="text-xs truncate">{task.assignedTo?.name}</span>
+                        <div className="flex -space-x-2 overflow-hidden">
+                          {task.assignedTo?.map((teacher, idx) => (
+                            <div key={idx} 
+                              className="w-7 h-7 rounded-full bg-slate-100 flex items-center justify-center text-[10px] font-bold text-slate-600 border-2 border-white ring-1 ring-slate-200" 
+                              title={teacher.name}
+                            >
+                              {teacher.name?.charAt(0).toUpperCase()}
+                            </div>
+                          ))}
+                          {task.assignedTo?.length === 0 && <span className="text-slate-400 text-[10px]">Unassigned</span>}
                         </div>
                       </td>
                       <td className="excel-td">
@@ -461,18 +466,28 @@ const HODDashboard = () => {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-semibold text-slate-700 mb-1">Assign To Teacher</label>
+                  <label className="block text-sm font-semibold text-slate-700 mb-1">Assign To Teachers (Select multiple)</label>
                   <select 
+                    multiple
                     required
-                    className="w-full px-4 py-2.5 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:outline-none text-sm shadow-sm bg-white"
+                    className="w-full px-4 py-2.5 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:outline-none text-sm shadow-sm bg-white min-h-[120px]"
                     value={formData.assignedTo}
-                    onChange={(e) => setFormData({...formData, assignedTo: e.target.value})}
+                    onChange={(e) => {
+                      const options = e.target.options;
+                      const selectedIds = [];
+                      for (let i = 0; i < options.length; i++) {
+                        if (options[i].selected) {
+                          selectedIds.push(options[i].value);
+                        }
+                      }
+                      setFormData({...formData, assignedTo: selectedIds});
+                    }}
                   >
-                    <option value="">{teachers.length === 0 ? 'No teachers available' : 'Select a teacher'}</option>
                     {teachers.map(t => (
                       <option key={t._id} value={t._id}>{t.name} ({t.email})</option>
                     ))}
                   </select>
+                  <p className="text-[10px] text-slate-400 mt-1">Hold Ctrl (Cmd) to select multiple teachers</p>
                 </div>
 
                 <div>

@@ -14,7 +14,10 @@ import {
 } from 'lucide-react';
 import { format, differenceInDays } from 'date-fns';
 
+import { useAuth } from '../context/AuthContext';
+
 const TeacherDashboard = () => {
+  const { user: currentUser } = useAuth();
   const [tasks, setTasks] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filterPriority, setFilterPriority] = useState('All');
@@ -56,7 +59,8 @@ const TeacherDashboard = () => {
   };
 
   const filteredTasks = tasks.filter(task => {
-    const matchesSearch = task.taskName.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesSearch = task.taskName.toLowerCase().includes(searchTerm.toLowerCase()) || 
+                          (task.projectName && task.projectName.toLowerCase().includes(searchTerm.toLowerCase()));
     const matchesPriority = filterPriority === 'All' || task.priority === filterPriority;
     const matchesStatus = filterStatus === 'All' || task.status === filterStatus;
     return matchesSearch && matchesPriority && matchesStatus;
@@ -95,7 +99,7 @@ const TeacherDashboard = () => {
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
             <input 
               type="text" 
-              placeholder="Search your tasks..." 
+              placeholder="Search your tasks or projects..." 
               className="pl-10 pr-4 py-3 border border-slate-200 rounded-2xl text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none w-full bg-white shadow-sm"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
@@ -148,7 +152,11 @@ const TeacherDashboard = () => {
                 </div>
 
                 <div className="p-5 flex-grow">
-                  <h3 className="text-lg font-bold text-slate-800 mb-2 leading-tight">{task.taskName}</h3>
+                  <div className="mb-3">
+                    <span className="text-[10px] font-bold text-indigo-600 uppercase tracking-tight">{task.projectName || 'General Project'}</span>
+                    <h3 className="text-lg font-bold text-slate-800 leading-tight">{task.taskName}</h3>
+                  </div>
+
                   <div className="flex items-center text-slate-500 text-xs mb-4">
                     <Calendar size={12} className="mr-1" />
                     <span>Due: {format(new Date(task.dueDate), 'MMM dd, yyyy')}</span>
@@ -157,6 +165,26 @@ const TeacherDashboard = () => {
                       {task.status === 'Completed' ? 'Done' : isOverdue ? 'Overdue' : `${daysLeft} days left`}
                     </span>
                   </div>
+
+                  {task.assignedTo?.length > 1 && (
+                    <div className="mb-4">
+                      <p className="text-[10px] font-bold text-slate-400 uppercase mb-2">Team:</p>
+                      <div className="flex flex-wrap gap-1.5">
+                        {task.assignedTo.map((teacher, idx) => (
+                          <div key={idx} 
+                            className={`flex items-center px-2 py-0.5 rounded-full text-[9px] font-medium border ${
+                              teacher._id === currentUser?._id 
+                                ? 'bg-indigo-50 text-indigo-700 border-indigo-100' 
+                                : 'bg-slate-50 text-slate-600 border-slate-100'
+                            }`}
+                            title={teacher.email}
+                          >
+                            {teacher._id === currentUser?._id ? 'You' : teacher.name}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
 
                   {task.remarks && (
                     <div className="bg-slate-50 p-3 rounded-xl border border-slate-100 mb-4">

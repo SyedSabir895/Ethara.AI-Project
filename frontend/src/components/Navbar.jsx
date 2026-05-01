@@ -2,6 +2,7 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { LogOut, User, LayoutDashboard, Database } from 'lucide-react';
+import EtharaLogo from '../assets/Ethara.png';
 
 const Navbar = ({ title }) => {
   const { user, logout } = useAuth();
@@ -17,8 +18,8 @@ const Navbar = ({ title }) => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between h-16">
           <div className="flex items-center space-x-3">
-            <div className="bg-indigo-600 p-2 rounded-lg shadow-sm">
-              <Database className="w-5 h-5 text-white" />
+            <div className="w-10 h-10 flex items-center justify-center overflow-hidden rounded-xl border border-slate-100 bg-slate-50 p-1.5 shadow-sm">
+              <img src={EtharaLogo} alt="Ethara Logo" className="w-full h-full object-contain" />
             </div>
             <span className="text-xl font-bold text-slate-800 hidden sm:block">Ethara</span>
             <div className="h-6 w-px bg-slate-200 mx-2 hidden sm:block"></div>

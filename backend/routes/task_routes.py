@@ -40,8 +40,9 @@ def get_tasks():
     # Convert ObjectIds to strings
     for task in tasks:
         task['_id'] = str(task['_id'])
-        if 'assignedTo' in task:
-            task['assignedTo']['_id'] = str(task['assignedTo']['_id'])
+        if 'assignedTo' in task and isinstance(task['assignedTo'], list):
+            for teacher in task['assignedTo']:
+                teacher['_id'] = str(teacher['_id'])
     return jsonify(tasks), 200
 
 @task_bp.route('/tasks/my-tasks', methods=['GET'])
@@ -51,8 +52,9 @@ def get_my_tasks():
     tasks = Task.get_by_teacher(user_id)
     for task in tasks:
         task['_id'] = str(task['_id'])
-        if 'assignedTo' in task:
-            task['assignedTo']['_id'] = str(task['assignedTo']['_id'])
+        if 'assignedTo' in task and isinstance(task['assignedTo'], list):
+            for teacher in task['assignedTo']:
+                teacher['_id'] = str(teacher['_id'])
     return jsonify(tasks), 200
 
 @task_bp.route('/tasks', methods=['POST'])
@@ -60,15 +62,21 @@ def get_my_tasks():
 def create_task():
     data = request.get_json()
     
-    assigned_to_id = data.get('assignedTo')
+    assigned_to_input = data.get('assignedTo')
     task_name = data.get('taskName')
     project_name = data.get('projectName', 'General')
     priority = data.get('priority')
     days_to_complete = data.get('daysToComplete')
     remarks = data.get('remarks')
 
-    if not assigned_to_id or not task_name or not priority or not days_to_complete:
+    if not assigned_to_input or not task_name or not priority or not days_to_complete:
         return jsonify({"message": "Missing required task fields"}), 400
+    
+    # Handle both single ID and list of IDs
+    if isinstance(assigned_to_input, list):
+        assigned_to_ids = assigned_to_input
+    else:
+        assigned_to_ids = [assigned_to_input]
     
     # Calculate due date
     due_date = datetime.utcnow() + timedelta(days=days_to_complete)
@@ -77,7 +85,7 @@ def create_task():
         "projectName": project_name,
         "taskName": task_name,
         "priority": priority,
-        "assignedTo": ObjectId(assigned_to_id),
+        "assignedTo": [ObjectId(tid) for tid in assigned_to_ids if tid],
         "assignedDate": datetime.utcnow(),
         "dueDate": due_date,
         "status": "Pending",
@@ -86,18 +94,20 @@ def create_task():
     
     result = Task.create(new_task)
     
-    # Send email notification
-    teacher = User.find_by_id(assigned_to_id)
-    email_sent = False
-    try:
-        email_sent = send_task_assignment_email(teacher, task_name, priority, due_date, remarks)
-    except Exception as e:
-        print(f"Error sending task assignment email: {e}")
+    # Send email notifications to all assigned teachers
+    emails_sent_count = 0
+    for tid in assigned_to_ids:
+        try:
+            teacher = User.find_by_id(tid)
+            if send_task_assignment_email(teacher, task_name, priority, due_date, remarks):
+                emails_sent_count += 1
+        except Exception as e:
+            print(f"Error sending task assignment email to {tid}: {e}")
             
     return jsonify({
-        "message": "Task created successfully",
+        "message": f"Task created successfully and assigned to {len(assigned_to_ids)} teacher(s)",
         "id": str(result.inserted_id),
-        "emailSent": email_sent
+        "emailsSent": emails_sent_count
     }), 201
 
 @task_bp.route('/tasks/<task_id>', methods=['DELETE'])

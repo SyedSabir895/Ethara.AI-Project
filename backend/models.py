@@ -39,7 +39,6 @@ class Task:
                     "as": "assignedTo"
                 }
             },
-            {"$unwind": "$assignedTo"},
             {"$project": {"assignedTo.password": 0}}
         ]
         return list(db.tasks.aggregate(pipeline))
@@ -56,7 +55,6 @@ class Task:
                     "as": "assignedTo"
                 }
             },
-            {"$unwind": "$assignedTo"},
             {"$project": {"assignedTo.password": 0}}
         ]
         return list(db.tasks.aggregate(pipeline))

@@ -20,7 +20,7 @@ const Navbar = ({ title }) => {
             <div className="bg-indigo-600 p-2 rounded-lg shadow-sm">
               <Database className="w-5 h-5 text-white" />
             </div>
-            <span className="text-xl font-bold text-slate-800 hidden sm:block">NRI Institute Of Technology</span>
+            <span className="text-xl font-bold text-slate-800 hidden sm:block">Ethara</span>
             <div className="h-6 w-px bg-slate-200 mx-2 hidden sm:block"></div>
             <h2 className="text-lg font-medium text-slate-600 truncate max-w-[200px] sm:max-w-md">{title}</h2>
           </div>

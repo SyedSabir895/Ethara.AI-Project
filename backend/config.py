@@ -12,7 +12,7 @@ class Config:
         'JWT_SECRET_KEY',
         os.getenv('JWT_SECRET', 'secret-key')
     )
-    
+    ALLOWED_ORIGINS = [origin.strip() for origin in os.getenv('ALLOWED_ORIGINS', '').split(',') if origin.strip()]
     # Mail settings
     MAIL_SERVER = os.getenv('MAIL_SERVER', 'smtp.gmail.com')
     MAIL_PORT = int(os.getenv('MAIL_PORT', 587))
@@ -21,6 +21,6 @@ class Config:
     MAIL_PASSWORD = os.getenv('MAIL_PASSWORD')
     MAIL_DEFAULT_SENDER = os.getenv(
         'MAIL_DEFAULT_SENDER',
-        f"NRI-AIML <{MAIL_USERNAME}>" if MAIL_USERNAME else 'NRI-AIML'
+        f"NRI-AIML <{os.getenv('MAIL_USERNAME')}>" if os.getenv('MAIL_USERNAME') else 'NRI-AIML'
     )
     FRONTEND_URL = os.getenv('FRONTEND_URL', 'http://localhost:5173').replace('localhost:5174', 'localhost:5173')

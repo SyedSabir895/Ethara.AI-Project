@@ -26,4 +26,18 @@ api.interceptors.request.use(
   }
 );
 
+// Add a response interceptor to handle session expiration (401 errors)
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    // If unauthorized (session expired), clear user info and redirect to login
+    if (error.response?.status === 401) {
+      localStorage.removeItem('userInfo');
+      // Redirect to login page
+      window.location.href = '/login';
+    }
+    return Promise.reject(error);
+  }
+);
+
 export default api;

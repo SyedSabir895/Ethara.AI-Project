@@ -84,9 +84,8 @@ const HODDashboard = () => {
         status: err.response?.status,
         url: err.config?.url,
       });
-      if (err.response?.status === 401) {
-        alert("Session expired. Please login again.");
-      }
+      // 401 errors are now handled by the API response interceptor
+      // which will auto-redirect to login page
     } finally {
       setLoading(false);
     }

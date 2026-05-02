@@ -3,6 +3,7 @@ from flask import Flask, jsonify
 from flask_cors import CORS
 from flask_jwt_extended import JWTManager
 from flask_mail import Mail
+from datetime import timedelta
 from config import Config
 from routes.auth_routes import auth_bp
 from routes.task_routes import task_bp
@@ -10,6 +11,9 @@ from routes.user_routes import user_bp
 
 app = Flask(__name__)
 app.config.from_object(Config)
+
+# Set JWT token expiration time to 24 hours (default is 15 minutes)
+app.config['JWT_ACCESS_TOKEN_EXPIRES'] = timedelta(days=1)
 
 # Validate mail configuration in production (but not when MAIL_SUPPRESS_SEND is true for testing)
 if not app.config.get('MAIL_SUPPRESS_SEND', False):

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import api from '../services/api';
 import Navbar from '../components/Navbar';
+import Select from 'react-select';
 import { 
   Plus, 
   Search, 
@@ -466,28 +467,22 @@ const HODDashboard = () => {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-semibold text-slate-700 mb-1">Assign To Teachers (Select multiple)</label>
-                  <select 
-                    multiple
-                    required
-                    className="w-full px-4 py-2.5 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:outline-none text-sm shadow-sm bg-white min-h-[120px]"
-                    value={formData.assignedTo}
-                    onChange={(e) => {
-                      const options = e.target.options;
-                      const selectedIds = [];
-                      for (let i = 0; i < options.length; i++) {
-                        if (options[i].selected) {
-                          selectedIds.push(options[i].value);
-                        }
-                      }
-                      setFormData({...formData, assignedTo: selectedIds});
-                    }}
-                  >
-                    {teachers.map(t => (
-                      <option key={t._id} value={t._id}>{t.name} ({t.email})</option>
-                    ))}
-                  </select>
-                  <p className="text-[10px] text-slate-400 mt-1">Hold Ctrl (Cmd) to select multiple teachers</p>
+                {/* Assign To Teachers (Select multiple) */}
+                <Select
+                  isMulti
+                  options={teachers.map(t => ({ value: t._id, label: `${t.name} (${t.email})` }))}
+                  value={teachers
+                    .filter(t => formData.assignedTo.includes(t._id))
+                    .map(t => ({ value: t._id, label: `${t.name} (${t.email})` }))
+                  }
+                  onChange={selected => {
+                    const selectedIds = selected ? selected.map(s => s.value) : [];
+                    setFormData({ ...formData, assignedTo: selectedIds });
+                  }}
+                  placeholder="Select teachers..."
+                  className="react-select-container"
+                  classNamePrefix="react-select"
+                />
                 </div>
 
                 <div>

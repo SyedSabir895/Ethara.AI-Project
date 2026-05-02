@@ -115,9 +115,19 @@ const HODDashboard = () => {
   const handleAddTeacher = async (e) => {
     e.preventDefault();
     try {
-      await api.post("/users", teacherFormData);
+      const res = await api.post("/users", teacherFormData);
       setShowTeacherModal(false);
       setTeacherFormData({ name: "", email: "" });
+      
+      // Show feedback about email status
+      if (res.data.emailSent) {
+        alert(`✓ Teacher added successfully!\n\nCredentials email sent to ${teacherFormData.email}`);
+      } else {
+        alert(
+          `⚠️ Teacher added successfully!\n\nBut credential email failed to send.\nError: ${res.data.emailError}\n\nYou may need to send credentials manually or check SMTP configuration.`
+        );
+      }
+      
       fetchData();
     } catch (err) {
       alert(

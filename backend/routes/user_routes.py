@@ -51,6 +51,8 @@ def manage_teachers():
         result = db.users.insert_one(new_teacher)
 
         # Send credentials via SMTP using configured Flask-Mail (include password)
+        email_sent = False
+        email_error = None
         try:
             from app import mail
             msg = Message(
@@ -66,10 +68,20 @@ def manage_teachers():
                 )
             )
             mail.send(msg)
+            email_sent = True
+            print(f"✓ Teacher credentials email sent successfully to {email}")
         except Exception as e:
-            print(f"Failed to send email to {email}: {e}")
+            email_error = str(e)
+            print(f"❌ Failed to send email to {email}: {e}")
+            import traceback
+            traceback.print_exc()
 
-        return jsonify({"message": "Teacher added successfully", "id": str(result.inserted_id)}), 201
+        return jsonify({
+            "message": "Teacher added successfully",
+            "id": str(result.inserted_id),
+            "emailSent": email_sent,
+            "emailError": email_error if not email_sent else None
+        }), 201
 
     # GET method
     teachers = User.get_all_teachers()

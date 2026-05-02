@@ -1,4 +1,6 @@
-from flask import Blueprint, request, jsonify
+from flask import Blueprint, request, jsonify, current_app
+
+
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from models import Task, User, db
 from bson import ObjectId
@@ -9,8 +11,13 @@ task_bp = Blueprint('tasks', __name__)
 
 
 def send_task_assignment_email(teacher, task_name, priority, due_date, remarks):
-    from app import mail
+    """Send assignment email to a teacher.
 
+    Handles missing mail configuration gracefully and logs any errors.
+    Returns ``True`` if the email was sent, ``False`` otherwise.
+    """
+    from app import mail
+    # Guard against missing teacher/email
     if not teacher or not teacher.get('email'):
         return False
 
@@ -22,7 +29,7 @@ def send_task_assignment_email(teacher, task_name, priority, due_date, remarks):
         recipients=[teacher['email']],
         body=(
             f"Hi {teacher_name},\n\n"
-            f'A new task "{task_name}" has been assigned to you.\n\n'
+            f'A new task "{task_name}" has been assigned to you.\n\n"
             f"Priority: {priority}\n"
             f"Due Date: {due_date.strftime('%Y-%m-%d')}\n"
             f"Remarks: {remark_text}\n\n"
@@ -30,8 +37,19 @@ def send_task_assignment_email(teacher, task_name, priority, due_date, remarks):
             "Regards,\nCollege Task Manager Team"
         )
     )
-    mail.send(msg)
-    return True
+
+    # If mail server is not configured, skip sending but log warning
+    if not getattr(mail, 'server', None) or not getattr(mail, 'port', None):
+        current_app.logger.warning('Mail server not configured; skipping email notification')
+        return False
+
+    try:
+        mail.send(msg)
+        return True
+    except Exception as e:
+        current_app.logger.error(f"Failed to send email to {teacher.get('email')}: {e}")
+        return False
+
 
 @task_bp.route('/tasks', methods=['GET'])
 @jwt_required()

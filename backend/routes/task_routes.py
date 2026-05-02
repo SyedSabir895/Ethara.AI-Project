@@ -6,7 +6,7 @@ from models import Task, User, db
 from bson import ObjectId
 from datetime import datetime, timedelta
 from flask_mail import Message
-
+import threading
 task_bp = Blueprint('tasks', __name__)
 
 
@@ -44,8 +44,18 @@ def send_task_assignment_email(teacher, task_name, priority, due_date, remarks):
         return False
 
     try:
-        mail.send(msg)
-        return True
+    # Send email in a background thread to avoid blocking the request
+    def _send(msg):
+        try:
+            # Ensure Flask app context is available in the thread
+            with current_app.app_context():
+                mail.send(msg)
+                current_app.logger.info(f"Email sent to {teacher.get('email')}")
+        except Exception as e_thread:
+            current_app.logger.error(f"Failed to send email to {teacher.get('email')}: {e_thread}")
+    thread = threading.Thread(target=_send, args=(msg,))
+    thread.start()
+    return True
     except Exception as e:
         current_app.logger.error(f"Failed to send email to {teacher.get('email')}: {e}")
         return False

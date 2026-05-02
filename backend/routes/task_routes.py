@@ -29,7 +29,7 @@ def send_task_assignment_email(teacher, task_name, priority, due_date, remarks):
         recipients=[teacher['email']],
         body=(
             f"Hi {teacher_name},\n\n"
-            f'A new task "{task_name}" has been assigned to you.\n\n"
+            f'A new task "{task_name}" has been assigned to you.\n\n'
             f"Priority: {priority}\n"
             f"Due Date: {due_date.strftime('%Y-%m-%d')}\n"
             f"Remarks: {remark_text}\n\n"
@@ -42,14 +42,14 @@ def send_task_assignment_email(teacher, task_name, priority, due_date, remarks):
     if not getattr(mail, 'server', None) or not getattr(mail, 'port', None):
         current_app.logger.warning('Mail server not configured; skipping email notification')
         return False
-
+    
     try:
-    # Send email in a background thread to avoid blocking the request
-    def _send(msg):
-        try:
-            # Ensure Flask app context is available in the thread
-            with current_app.app_context():
-                mail.send(msg)
+        # Send email in a background thread to avoid blocking the request
+        def _send(msg):
+            try:
+                # Ensure Flask app context is available in the thread
+                with current_app.app_context():
+                    mail.send(msg)
                 current_app.logger.info(f"Email sent to {teacher.get('email')}")
         except Exception as e_thread:
             current_app.logger.error(f"Failed to send email to {teacher.get('email')}: {e_thread}")

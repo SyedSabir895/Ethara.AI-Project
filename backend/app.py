@@ -12,7 +12,17 @@ app = Flask(__name__)
 app.config.from_object(Config)
 
 # Initialize Extensions
-CORS(app, resources={r"/api/*": {"origins": "*"}})
+CORS(app, resources={
+    r"/api/*": {
+        "origins": [
+            "https://ethara-ai-clgproject.up.railway.app",
+            "http://localhost:5173",
+            "http://localhost:3000"
+        ],
+        "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+        "allow_headers": ["Content-Type", "Authorization"]
+    }
+}, supports_credentials=True)
 jwt = JWTManager(app)
 mail = Mail(app)
 

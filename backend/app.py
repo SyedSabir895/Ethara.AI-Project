@@ -11,6 +11,14 @@ from routes.user_routes import user_bp
 app = Flask(__name__)
 app.config.from_object(Config)
 
+# Validate mail configuration in production (but not when MAIL_SUPPRESS_SEND is true for testing)
+if not app.config.get('MAIL_SUPPRESS_SEND', False):
+    try:
+        Config.validate_mail_config()
+    except ValueError as e:
+        # Only warn, don't fail, to allow app to start without mail for development
+        print(f"⚠️  WARNING: {e} - Some email features will not work")
+
 # Initialize Extensions
 CORS(app, resources={
     r"/api/*": {

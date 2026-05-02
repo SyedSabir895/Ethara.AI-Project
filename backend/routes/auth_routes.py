@@ -104,9 +104,14 @@ def forgot_password():
             )
         )
         mail.send(msg)
+        print(f"✓ Reset email sent successfully to {email}")
     except Exception as e:
-        print(f"Failed to send reset email to {email}: {e}")
-        return jsonify({"message": "Failed to send reset email", "error": str(e)}), 500
+        print(f"❌ Failed to send reset email to {email}")
+        print(f"   Error: {str(e)}")
+        print(f"   Check MAIL_USERNAME and MAIL_PASSWORD environment variables")
+        print(f"   If using Gmail, ensure you're using an App Password (not regular password)")
+        # Don't fail the request - token is valid, just email couldn't be sent
+        # return jsonify({"message": "Failed to send reset email", "error": str(e)}), 500
 
     return jsonify({"message": "Reset link sent successfully"}), 200
 

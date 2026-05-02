@@ -1,15 +1,49 @@
-from flask import Blueprint, request, jsonify
+from flask import Blueprint, request, jsonify, current_app
 from flask_jwt_extended import create_access_token
 from flask_bcrypt import Bcrypt
 from models import User, db
 from bson import ObjectId
 from datetime import datetime, timedelta
 import secrets
+import threading
 from config import Config
 
 auth_bp = Blueprint('auth', __name__)
 bcrypt = Bcrypt()
- 
+
+
+# ========================= EMAIL FUNCTION =========================
+def send_password_reset_email(user_email, user_name, reset_link):
+    from app import mail
+    from flask_mail import Message
+
+    msg = Message(
+        subject="Password reset for College Task Manager",
+        recipients=[user_email],
+        body=(
+            f"Hi {user_name},\n\n"
+            "We received a request to reset your password. Click the link below to set a new password (valid for 1 hour):\n\n"
+            f"{reset_link}\n\n"
+            "If you did not request this, you can ignore this message.\n\n"
+            "Regards,\nCollege Task Manager Team"
+        )
+    )
+
+    # Capture real app instance BEFORE thread starts
+    app = current_app._get_current_object()
+
+    def _send(msg, app):
+        with app.app_context():
+            try:
+                mail.send(msg)
+                app.logger.info(f"✓ Reset email sent successfully to {user_email}")
+            except Exception as e:
+                app.logger.error(f"❌ Failed to send reset email to {user_email}: {e}")
+
+    thread = threading.Thread(target=_send, args=(msg, app))
+    thread.start()
+
+
 @auth_bp.route('/register', methods=['POST'])
 def register():
     try:
@@ -88,30 +122,8 @@ def forgot_password():
 
     db.users.update_one({"_id": user['_id']}, {"$set": {"reset_token": token, "reset_token_expires": expires_at}})
 
-    try:
-        from app import mail
-        from flask_mail import Message
-        reset_link = f"{Config.FRONTEND_URL.rstrip('/')}" + f"/reset-password?token={token}"
-        msg = Message(
-            subject="Password reset for College Task Manager",
-            recipients=[email],
-            body=(
-                f"Hi {user.get('name','')},\n\n"
-                "We received a request to reset your password. Click the link below to set a new password (valid for 1 hour):\n\n"
-                f"{reset_link}\n\n"
-                "If you did not request this, you can ignore this message.\n\n"
-                "Regards,\nCollege Task Manager Team"
-            )
-        )
-        mail.send(msg)
-        print(f"✓ Reset email sent successfully to {email}")
-    except Exception as e:
-        print(f"❌ Failed to send reset email to {email}")
-        print(f"   Error: {str(e)}")
-        print(f"   Check MAIL_USERNAME and MAIL_PASSWORD environment variables")
-        print(f"   If using Gmail, ensure you're using an App Password (not regular password)")
-        # Don't fail the request - token is valid, just email couldn't be sent
-        # return jsonify({"message": "Failed to send reset email", "error": str(e)}), 500
+    reset_link = f"{Config.FRONTEND_URL.rstrip('/')}/reset-password?token={token}"
+    send_password_reset_email(email, user.get('name', ''), reset_link)
 
     return jsonify({"message": "Reset link sent successfully"}), 200
 

@@ -37,19 +37,21 @@ def send_task_assignment_email(teacher, task_name, priority, due_date, remarks):
         current_app.logger.warning('Mail server not configured; skipping email')
         return False
 
-    def _send(msg):
-        try:
-            app = current_app._get_current_object()
-            with app.app_context():
+    # ✅ Capture real app instance BEFORE thread starts
+    app = current_app._get_current_object()
+
+    def _send(msg, app):
+        with app.app_context():
+            try:
                 mail.send(msg)
-            app.logger.info(f"Email sent to {teacher.get('email')}")
-        except Exception as e:
-            current_app.logger.error(f"Email failed: {e}")
+                app.logger.info(f"Email sent to {teacher.get('email')}")
+            except Exception as e:
+                app.logger.error(f"Email failed: {e}")
 
-    thread = threading.Thread(target=_send, args=(msg,))
+    thread = threading.Thread(target=_send, args=(msg, app))
     thread.start()
-    return True
 
+    return True
 
 # ========================= GET ALL TASKS =========================
 @task_bp.route('/tasks', methods=['GET'])

@@ -94,15 +94,19 @@ def create_task():
     
     result = Task.create(new_task)
     
-    # Send email notifications to all assigned teachers
+        # Send email notifications to all assigned teachers (non‑blocking, robust)
     emails_sent_count = 0
+    from flask import current_app
     for tid in assigned_to_ids:
         try:
             teacher = User.find_by_id(tid)
+            if not teacher:
+                current_app.logger.warning(f"Teacher with id {tid} not found")
+                continue
             if send_task_assignment_email(teacher, task_name, priority, due_date, remarks):
                 emails_sent_count += 1
         except Exception as e:
-            print(f"Error sending task assignment email to {tid}: {e}")
+            current_app.logger.error(f"Failed to send task assignment email to {tid}: {e}")
             
     return jsonify({
         "message": f"Task created successfully and assigned to {len(assigned_to_ids)} teacher(s)",
